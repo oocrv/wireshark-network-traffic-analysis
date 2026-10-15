@@ -1,0 +1,10 @@
+# Wireshark packet captures can contain sensitive network data.
+# Keep captures local until reviewed and sanitized.
+captures/*.pcap
+captures/*.pcapng
+
+# Local exports and temporary files
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db

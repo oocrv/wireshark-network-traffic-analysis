@@ -39,11 +39,13 @@ A captured TCP flow showed the expected three-way handshake:
 2. Server to client: SYN, ACK
 3. Client to server: ACK
 
-Display filter:
+Display filter shown in the handshake screenshot:
 
 ```
-tcp.flags.syn == 1
+tcp.stream eq 27
 ```
+
+The screenshot shows the three handshake packets from TCP stream 27. `tcp.flags.syn == 1` is another valid filter for SYN packets, but it is not the filter shown in that screenshot.
 
 ### 3. TLS handshake visibility
 
@@ -65,7 +67,13 @@ nslookup example.com 192.0.2.1
 
 The command timed out, and the capture showed DNS requests from the local host to `192.0.2.1` without a corresponding response in the observed packets. The address is in the documentation range `192.0.2.0/24`; this is a controlled test, not evidence that the user's normal DNS service is broken.
 
-Display filter:
+Display filter shown in the timeout screenshot:
+
+```
+dns
+```
+
+Optional narrower filter for a separate follow-up inspection (not the filter shown in the screenshot):
 
 ```
 dns && ip.addr == 192.0.2.1
@@ -75,11 +83,19 @@ dns && ip.addr == 192.0.2.1
 
 One captured flow showed an RST, ACK after FIN-related traffic. A reset flag alone does not prove a network fault. The surrounding stream and application context would be needed before assigning a root cause, so this is documented as an observation rather than a confirmed incident.
 
-Display filter:
+Suggested filter for a separate packet-list inspection (not shown in the TCP Conversations screenshot):
+
+```
+tcp.flags.reset == 1
+```
+
+To inspect retransmissions and resets together in a separate packet-list view:
 
 ```
 tcp.analysis.retransmission || tcp.flags.reset == 1
 ```
+
+The TCP Conversations screenshot is a Statistics window, not a packet-list view, and does not show a display-filter bar. It also does not depict frame 1674; the reset is documented as a separate observation.
 
 ## Evidence screenshots
 

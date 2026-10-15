@@ -1,116 +1,76 @@
-# Wireshark Network Troubleshooting
+# Wireshark Network Traffic Analysis
 
-A hands-on packet-analysis project using Wireshark on Windows. This repository documents DNS query/response behavior, TCP connection setup and teardown, TLS handshake visibility, and a controlled DNS timeout test.
+A practical packet-analysis lab using Wireshark on Windows. The project documents DNS query/response behavior, DNS requests with no response visible in the captured evidence, a TCP three-way handshake, TLS handshake visibility, TCP conversation statistics, and a separate TCP reset observation.
 
-**Status:** Lab documentation and eight screenshots are published. Findings describe observed evidence and do not claim an unverified production outage or repair.
+The findings are limited to what was observed in the capture. This project does not claim that a production outage was confirmed or repaired.
 
 ## Objectives
 
-- Inspect DNS queries and responses using Wireshark display filters.
+- Inspect DNS queries and matching responses.
+- Review DNS requests for which no response is visible in the displayed packets.
 - Identify the TCP three-way handshake: SYN, SYN-ACK, ACK.
-- Inspect visible TLS handshake messages without assuming encrypted application contents are readable.
-- Review TCP conversations and selected packet details.
-- Compare a deliberately unsuccessful DNS query with a successful query using the system's default resolver.
-- Practice evidence-based troubleshooting and document limitations.
+- Recognize visible TLS handshake messages.
+- Read TCP conversation statistics and inspect a TCP reset packet.
+- Record observations without guessing at a root cause.
 
-## Tools
+## Filters used in the screenshots
 
-- Wireshark
-- Windows Command Prompt and `nslookup`
-- The active Windows network interface
-
-## Lab scenarios
-
-### 1. DNS query and response
-
-A successful `nslookup example.com` query using the system's default DNS resolver returned IPv4 and IPv6 addresses. The resolver was displayed as `fe80::1` with the label `UnKnown`; that label alone does not indicate a DNS failure.
-
-Display filter:
+DNS packet list:
 
 ```
 dns
 ```
 
-### 2. TCP connection setup
-
-A captured TCP flow showed the expected three-way handshake:
-
-1. Client to server: SYN
-2. Server to client: SYN, ACK
-3. Client to server: ACK
-
-Display filter shown in the handshake screenshot:
+TCP stream 27:
 
 ```
 tcp.stream eq 27
 ```
 
-The screenshot shows the three handshake packets from TCP stream 27. `tcp.flags.syn == 1` is another valid filter for SYN packets, but it is not the filter shown in that screenshot.
-
-### 3. TLS handshake visibility
-
-The capture showed a TLS Client Hello with SNI `example.com` and Server Hello-related traffic. This demonstrates visible handshake messages, not that every TLS handshake stage was independently verified from the screenshot alone.
-
-Display filter:
+TLS handshake-related packets:
 
 ```
 tls.handshake
 ```
 
-### 4. Controlled DNS timeout
+These are the filters used in the evidence screenshots; other filters are not listed as though they were used.
 
-The command below was used to intentionally query a documentation-only address:
+## Findings
 
-```
-nslookup example.com 192.0.2.1
-```
+### 1. DNS query and response
 
-The command timed out, and the capture showed DNS requests from the local host to `192.0.2.1` without a corresponding response in the observed packets. The address is in the documentation range `192.0.2.0/24`; this is a controlled test, not evidence that the user's normal DNS service is broken.
+The capture contains a query for `example.com` with transaction ID `0x0003`. The matching response reports **No error** and two IPv6 answers. Wireshark reports a response time of about 9.0198 ms.
 
-Display filter shown in the timeout screenshot:
+### 2. DNS requests with no visible response
 
-```
-dns
-```
+Repeated DNS requests from `192.168.1.8` to `192.0.2.1` appear in the capture, including the PTR name `1.2.0.192.in-addr.arpa`. No matching response is visible in the displayed evidence. This observation alone does not prove that the default DNS resolver is broken or confirm why no response appears.
 
-Optional narrower filter for a separate follow-up inspection (not the filter shown in the screenshot):
+### 3. TCP three-way handshake
 
-```
-dns && ip.addr == 192.0.2.1
-```
+The packet list filtered to stream 27 shows the SYN, SYN-ACK, and ACK connection-setup exchange. Packet 1092 is shown as SYN, ACK in the packet-details screenshot.
 
-### 5. TCP connection teardown review
+### 4. TLS handshake visibility
 
-One captured flow showed an RST, ACK after FIN-related traffic. A reset flag alone does not prove a network fault. The surrounding stream and application context would be needed before assigning a root cause, so this is documented as an observation rather than a confirmed incident.
+The capture shows a TLS Client Hello with SNI `example.com` and Server Hello-related traffic. This demonstrates visible handshake-related packets, not that every stage was independently verified.
 
-Suggested filter for a separate packet-list inspection (not shown in the TCP Conversations screenshot):
+### 5. TCP conversation statistics and reset
 
-```
-tcp.flags.reset == 1
-```
+The TCP Conversations window shows a conversation for stream 27 with local port `62100`, remote port `443`, 16 packets, and duration of approximately `0.155 seconds`.
 
-To inspect retransmissions and resets together in a separate packet-list view:
-
-```
-tcp.analysis.retransmission || tcp.flags.reset == 1
-```
-
-The TCP Conversations screenshot is a Statistics window, not a packet-list view, and does not show a display-filter bar. It also does not depict frame 1674; the reset is documented as a separate observation.
+Separately, frame 1674 was inspected as an `RST, ACK` packet from `192.168.1.8:63591` to `4.207.44.67:443`. A reset flag alone does not establish the reason for a connection reset. A dedicated screenshot of frame 1674 is not included.
 
 ## Evidence screenshots
 
-The screenshots below are from the lab capture. Select any image to open its full-size version.
-
 | Evidence | Screenshot |
 |---|---|
-| DNS analysis overview | [dns-analysis.pcapng.png](screenshots/dns-analysis.pcapng.png) |
+| DNS analysis overview | [1-dns-analysis.png](screenshots/1-dns-analysis.png) |
 | DNS query details | [02-dns-query-details.png](screenshots/02-dns-query-details.png) |
-| DNS response details | [03-dns-response-details.png](screenshots/03-dns-response-details.png) |
-| TCP three-way handshake | [1-tcp-three-way-handshake.png](screenshots/1-tcp-three-way-handshake.png) |
-| TCP packet details | [2-tcp-packet-details.png](screenshots/2-tcp-packet-details.png) |
-| TLS handshake | [3-tls-handshake.png](screenshots/3-tls-handshake.png) |
-| TCP conversations | [4-tcp-conversations.png](screenshots/4-tcp-conversations.png) |
-| Controlled DNS timeout | [dns-timeout.png](screenshots/dns-timeout.png) |
+| DNS response details | [3-dns-response-details.png](screenshots/3-dns-response-details.png) |
+| DNS requests with no visible response | [4-dns-timeout.png](screenshots/4-dns-timeout.png) |
+| TCP three-way handshake | [5-tcp-three-way-handshake.png](screenshots/5-tcp-three-way-handshake.png) |
+| TCP packet details | [6-tcp-packet-details.png](screenshots/6-tcp-packet-details.png) |
+| TLS handshake | [7-tls-handshake.png](screenshots/7-tls-handshake.png) |
+| TCP Conversations statistics | [8-tcp-conversations.png](screenshots/8-tcp-conversations.png) |
 
 ## Repository structure
 
@@ -120,20 +80,14 @@ The screenshots below are from the lab capture. Select any image to open its ful
 ├── .gitignore
 ├── screenshots/
 │   └── Eight lab evidence screenshots
-├── captures/
-│   └── Reserved for reviewed, sanitized captures
 └── reports/
-    └── troubleshooting-report.md
+    └── network-traffic-analysis-report.md
 ```
 
 ## Privacy and safe sharing
 
-Before publishing screenshots or PCAP/PCAPNG files, review them for public IP addresses, hostnames, DNS queries, usernames, internal network details, cookies, tokens, and other identifying information. Packet captures can reveal more than screenshots. Do not publish raw captures until they have been reviewed and sanitized. The captures directory is intentionally empty for now.
-
-## Key takeaway
-
-This lab practices a repeatable workflow: observe packets, apply display filters, compare command-line results, record evidence, and distinguish confirmed observations from hypotheses. No real network outage or root cause is claimed without sufficient supporting evidence.
+Screenshots may show IP addresses, hostnames, and DNS queries. Review them before sharing publicly. Raw PCAP/PCAPNG files can expose more sensitive details than screenshots; do not publish them unless they have been reviewed and appropriately sanitized.
 
 ## Detailed report
 
-See [reports/troubleshooting-report.md](reports/troubleshooting-report.md) for the scenario-by-scenario findings and limitations.
+See [Network Traffic Analysis Lab Report](reports/network-traffic-analysis-report.md) for the screenshot-by-screenshot observations and interpretation.

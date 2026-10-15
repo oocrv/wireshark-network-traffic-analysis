@@ -110,15 +110,17 @@ To examine the complete flow, use tcp.stream eq N, replacing N with the stream i
 
 The lab demonstrates DNS query analysis, a successful DNS lookup, a controlled DNS timeout, TCP handshake recognition, TLS handshake visibility, and cautious interpretation of a TCP reset. The controlled timeout is explained by the deliberately selected documentation address. No unrelated real-world network failure is claimed.
 
-## Evidence checklist
+## Published evidence
 
-- [ ] Add DNS analysis screenshot.
-- [ ] Add DNS query detail screenshot.
-- [ ] Add DNS response detail screenshot.
-- [ ] Add TCP three-way handshake screenshot.
-- [ ] Add TCP packet detail screenshot.
-- [ ] Add TLS handshake screenshot.
-- [ ] Add TCP conversations screenshot.
-- [ ] Add DNS timeout screenshot.
-- [ ] Optionally add the TCP reset observation screenshot.
-- [ ] Review every screenshot and capture for sensitive data before public release.
+Eight screenshots are stored in the repository's `screenshots/` directory:
+
+- `dns-analysis.pcapng.png`
+- `02-dns-query-details.png`
+- `03-dns-response-details.png`
+- `1-tcp-three-way-handshake.png`
+- `2-tcp-packet-details.png`
+- `3-tls-handshake.png`
+- `4-tcp-conversations.png`
+- `dns-timeout.png`
+
+Before sharing the repository more widely, review the screenshots for identifying or sensitive network information. Raw PCAP/PCAPNG captures are not included; packet captures can expose more detail than screenshots.
